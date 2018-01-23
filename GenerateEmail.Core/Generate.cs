@@ -1,7 +1,7 @@
 ﻿using GenerateEmail.Core.Model;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
 namespace GenerateEmail.Core
 {
@@ -17,9 +17,10 @@ namespace GenerateEmail.Core
 
         public Generate(int count,string keywords,int parallelExcuteCount)
         {
+            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss ffffff") + " 开始");
             _keywords = keywords;
-            _list = new List<int>() { -1 };
-            for (int i = 0; i < count-1; i++)
+            _list = new List<int>();
+            for (int i = 0; i < count; i++)
             {
                 _list.Add(-1);
             }
@@ -28,9 +29,64 @@ namespace GenerateEmail.Core
 
         public void Setup()
         {
-            if (_list.Count > 4)
+            int segmentation = 5;
+            var empty = new List<int>();
+            for (int i = 0; i < segmentation; i++)
             {
+                empty.Add(-1);
+            }
+            var end = _list;
+            if (_list.Count > segmentation)
+            {
+                
+                var list = new List<int>();
+                list.AddRange(_list.Take(_list.Count - segmentation));
+                int i = 0;
                 //分段穷举
+                while (list[i] < _keywords.Length)
+                {
+                    list[i]++;
+                    if (list[i] == _keywords.Length)
+                    {
+
+                        if (i + 1 == list.Count)
+                        {
+                            //超出数组范围停止
+                            break;
+                        }
+                        else
+                        {
+                            //等待下一位+1
+                            list[i] = -1;
+                            i++;
+                            continue;
+                        }
+                    }
+                    else if (list[i] < _keywords.Length && i > 0)
+                    {
+                        //等待下一位+1
+                        i--;
+                        continue;
+                    }
+                    else
+                    {
+                        var taskinfo = new TaskInfo();
+                        taskinfo.Keywords = _keywords;
+                        taskinfo.Start = new List<int>();
+                        taskinfo.Start.AddRange(empty);
+                        taskinfo.Start.AddRange(end);
+                        taskinfo.End = new List<int>();
+                        taskinfo.End.AddRange(empty);
+                        taskinfo.End.AddRange(list);
+                        end = new List<int>();
+                        end.AddRange(list);
+                        _queueAsyncWorker.Add(new QueueTask()
+                        {
+                            CurrentTask = Perform,
+                            Param = taskinfo
+                        });
+                    }
+                }
             }
             else
             {
@@ -49,7 +105,10 @@ namespace GenerateEmail.Core
                 });
             }
         }
-
+        /// <summary>
+        /// 穷举执行方法
+        /// </summary>
+        /// <param name="obj"></param>
         public void Perform(object obj)
         {
             var taskinfo = obj as TaskInfo;
@@ -57,7 +116,7 @@ namespace GenerateEmail.Core
             var end = taskinfo.End;
             var keywords = taskinfo.Keywords;
             int i = 0;
-            end = new List<int>() { 37, 37, 37,2 };
+            //end = new List<int>() { 37, 37, 37,2 };
             while (start[i] < keywords.Length)
             {
                 start[i]++;
@@ -97,10 +156,10 @@ namespace GenerateEmail.Core
                     //        str += keywords[item];
                     //}
                     //Console.WriteLine(str);
-                    Console.WriteLine(string.Join(",", start));
+                    //Console.WriteLine(string.Join(",", start));
                 }
             }
-            Console.WriteLine("结束");
+            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss ffffff") + " 结束");
         }
         /// <summary>
         /// 是否超过
