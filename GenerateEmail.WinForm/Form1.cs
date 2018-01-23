@@ -20,8 +20,9 @@ namespace GenerateEmail.WinForm
 
         private void button1_Click(object sender, EventArgs e)
         {
+            Console.ForegroundColor = ConsoleColor.Red; //设置字体颜色为红色 
             string keyword = "abcdefghijklmnopqrstuvwzyx0123456789._";
-            Generate generate = new Generate(8, keyword, 500);
+            Generate generate = new Generate(6, keyword, 500);
             Task.Factory.StartNew(() =>
             {
                 generate.Setup();

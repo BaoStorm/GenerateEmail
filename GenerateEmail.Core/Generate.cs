@@ -1,6 +1,7 @@
 ﻿using GenerateEmail.Core.Model;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace GenerateEmail.Core
@@ -29,13 +30,18 @@ namespace GenerateEmail.Core
 
         public void Setup()
         {
+            var taskInfos = new List<TaskInfo>();
             int segmentation = 5;
             var empty = new List<int>();
             for (int i = 0; i < segmentation; i++)
             {
                 empty.Add(-1);
             }
-            var end = _list;
+            var end = new List<int>();
+            for (int i = 0; i < _list.Count-segmentation; i++)
+            {
+                end.Add(-1);
+            }
             if (_list.Count > segmentation)
             {
                 
@@ -80,6 +86,7 @@ namespace GenerateEmail.Core
                         taskinfo.End.AddRange(list);
                         end = new List<int>();
                         end.AddRange(list);
+                        taskInfos.Add(taskinfo);
                         _queueAsyncWorker.Add(new QueueTask()
                         {
                             CurrentTask = Perform,
@@ -111,6 +118,8 @@ namespace GenerateEmail.Core
         /// <param name="obj"></param>
         public void Perform(object obj)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
             var taskinfo = obj as TaskInfo;
             var start = taskinfo.Start;
             var end = taskinfo.End;
@@ -159,7 +168,8 @@ namespace GenerateEmail.Core
                     //Console.WriteLine(string.Join(",", start));
                 }
             }
-            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss ffffff") + " 结束");
+            stopwatch.Stop();
+            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss ffffff") + "  " + string.Join(",", end) + "结束 耗时" + stopwatch.ElapsedMilliseconds);
         }
         /// <summary>
         /// 是否超过
@@ -181,11 +191,11 @@ namespace GenerateEmail.Core
                 }
                 if (flag)
                 {
-                    if (start[i] >= end[i])
+                    if (start[i] > end[i])
                     {
                         return true;
                     }
-                    if (start[i] < end[i])
+                    if (start[i] <= end[i])
                     {
                         return false;
                     }
