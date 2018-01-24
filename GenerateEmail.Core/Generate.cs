@@ -3,11 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Sockets;
 
 namespace GenerateEmail.Core
 {
     public class Generate
     {
+        private string _mailFrom => "check@verify-email.org";
+        private int _timeout = 10000;
+
         private string _keywords;
         public string Keywords => _keywords;
 
@@ -15,17 +19,27 @@ namespace GenerateEmail.Core
         public List<int> List => _list;
 
         private QueueAsyncWorker _queueAsyncWorker;
+        private QueueAsyncWorker _emailQueueAsyncWorker;
 
-        public Generate(int count,string keywords,int parallelExcuteCount)
+        private string _emailSuffix;
+
+        public string EmailSuffix => _emailSuffix;
+
+        public string MailServer;
+
+        public Generate(int count,string keywords,int parallelExcuteCount,string emailSuffix)
         {
-            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss ffffff") + " 开始");
+            //Console.WriteLine(DateTime.Now.ToString("HH:mm:ss ffffff") + " 开始");
             _keywords = keywords;
             _list = new List<int>();
+            _emailSuffix = emailSuffix;
+            MailServer = new CheckEmail(10000).getMailServer("a" + _emailSuffix, true);
             for (int i = 0; i < count; i++)
             {
                 _list.Add(-1);
             }
             _queueAsyncWorker = new QueueAsyncWorker(parallelExcuteCount);
+            _emailQueueAsyncWorker = new QueueAsyncWorker(100);
         }
 
         public void Setup()
@@ -158,18 +172,24 @@ namespace GenerateEmail.Core
                 }
                 else
                 {
-                    //string str = "";
-                    //foreach (var item in start)
-                    //{
-                    //    if (item >= 0)
-                    //        str += keywords[item];
-                    //}
+                    string email = "";
+                    foreach (var item in start)
+                    {
+                        if (item >= 0)
+                            email += keywords[item];
+                    }
+                    CheckEmail(email + EmailSuffix);
                     //Console.WriteLine(str);
                     //Console.WriteLine(string.Join(",", start));
+                    //_emailQueueAsyncWorker.Add(new QueueTask()
+                    //{
+                    //    CurrentTask = CheckEmail,
+                    //    Param = email + EmailSuffix
+                    //});
                 }
             }
             stopwatch.Stop();
-            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss ffffff") + "  " + string.Join(",", end) + "结束 耗时" + stopwatch.ElapsedMilliseconds);
+            //Console.WriteLine(DateTime.Now.ToString("HH:mm:ss ffffff") + "  " + string.Join(",", end) + "结束 耗时" + stopwatch.ElapsedMilliseconds);
         }
         /// <summary>
         /// 是否超过
@@ -204,5 +224,16 @@ namespace GenerateEmail.Core
             return false;
         }
 
+
+        private void CheckEmail(object obj)
+        {
+            var email = obj as string;
+            CheckEmail checkEmail = new Core.CheckEmail(_timeout);
+            if(checkEmail.Check(_mailFrom, email, MailServer))
+            {
+                Console.WriteLine(email);
+            }
+            
+        }
     }
 }

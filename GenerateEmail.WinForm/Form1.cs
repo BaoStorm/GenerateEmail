@@ -22,7 +22,8 @@ namespace GenerateEmail.WinForm
         {
             Console.ForegroundColor = ConsoleColor.Red; //设置字体颜色为红色 
             string keyword = "abcdefghijklmnopqrstuvwzyx0123456789._";
-            Generate generate = new Generate(6, keyword, 500);
+            string emailSuffix = "@bluefocus.com";
+            Generate generate = new Generate(7, keyword, 100, emailSuffix);
             Task.Factory.StartNew(() =>
             {
                 generate.Setup();
